@@ -1,14 +1,17 @@
+package centralized;
+
 import ilog.concert.IloException;
 import ilog.concert.IloNumExpr;
 import ilog.concert.IloNumVar;
 import ilog.cplex.IloCplex;
 
-public class Solver {
+public class CentralizedSolver {
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		IloCplex cplex;
-		int iter_limit = 600000;
+//		int iter_limit = 600000;
+		int iter_limit = 10000;
 		double surrogatesubgradient1 = 0d;
 		double surrogatesubgradient2 = 0d;
 		double surrogatesubgradient3 = 0d;
@@ -20,7 +23,7 @@ public class Solver {
 		double step = 0.05d;
 		double oldstep = 0.05d;
 
-		for (int k = 1; k < iter_limit; k++) {
+		for (int k = 1; k <= iter_limit; k++) {
 			try {
 				cplex = new IloCplex();
 				cplex.setOut(null);
@@ -30,7 +33,7 @@ public class Solver {
 				IloNumVar x3 = cplex.numVar(0, 3);
 
 				IloNumExpr obj = cplex.numExpr();
-				IloNumExpr tmp1 = cplex.sum(x1, cplex.sum(cplex.prod(2, x2), x3));
+				IloNumExpr tmp1 = cplex.sum(x1, cplex.sum(cplex.prod(2, x2), cplex.prod(3, x3)));
 				IloNumExpr tmp2 = cplex.prod(cplex.sum(x1, cplex.prod(3, x2), cplex.sum(cplex.prod(5, x3), -7)), mult1);
 				IloNumExpr tmp3 = cplex.prod(
 						cplex.sum(cplex.prod(2, x1), cplex.prod(0.5, x2), cplex.sum(cplex.prod(5, x3), -8)), mult2);
@@ -52,10 +55,14 @@ public class Solver {
 				surrogatesubgradient1 = m2_x1 + 3 * m2_x2 + 5 * m2_x3 - 7;
 				surrogatesubgradient2 = 2 * m2_x1 + 1 / 2 * m2_x2 + 5 * m2_x3 - 8;
 				surrogatesubgradient3 = 3 * m2_x1 + 5 * m2_x2 + m2_x3 - 5;
+				// normsquared = surrogatesubgradient1 * surrogatesubgradient1
+				// + surrogatesubgradient2 * surrogatesubgradient2 + surrogatesubgradient3 *
+				// surrogatesubgradient3;
 				normsquared = normsquared + surrogatesubgradient1 * surrogatesubgradient1
 						+ surrogatesubgradient2 * surrogatesubgradient2 + surrogatesubgradient3 * surrogatesubgradient3;
 
 				int M = 100;
+				// double r = 0.05d;
 				double r = 0.075d;
 				step = (1 - 1 / M / Math.pow(k, 1 - 1 / Math.pow(k, r))) * oldstep
 						* Math.sqrt(oldnormsquared / normsquared);
@@ -69,6 +76,7 @@ public class Solver {
 
 				System.out.println(
 						Lagrangian + "	" + step + "	" + normsquared + "	" + mult1 + "	" + mult2 + "	" + mult3);
+				cplex.end();
 			} catch (IloException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
